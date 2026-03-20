@@ -88,6 +88,12 @@
   .type-etf { background: rgba(79,200,160,0.15); color: var(--accent2); }
   .type-stock { background: rgba(247,162,106,0.15); color: var(--accent3); }
   .type-chip { background: rgba(124,106,247,0.15); color: var(--accent); }
+  .ticker-badge {
+    font-size: 9px; font-family: var(--mono); padding: 2px 6px; border-radius: 3px;
+    display: inline-block; letter-spacing: 0.06em; font-weight: 500; margin-top: 6px;
+  }
+  .badge-owned { background: rgba(79,200,160,0.15); color: var(--accent2); border: 1px solid rgba(79,200,160,0.25); }
+  .badge-monitoring { background: rgba(124,106,247,0.1); color: var(--accent); border: 1px solid rgba(124,106,247,0.2); }
 
   /* controls */
   .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
@@ -289,32 +295,39 @@
 
 <script>
 const STOCKS = [
-  { ticker: 'VOO',  name: 'Vanguard S&P 500 ETF',      type: 'etf',   color: '#4fc8a0', month: 1 },
-  { ticker: 'VXUS', name: 'Vanguard Total Intl Stock',  type: 'etf',   color: '#4fc8a0', month: 1 },
-  { ticker: 'SCHD', name: 'Schwab Dividend Equity ETF', type: 'etf',   color: '#4fc8a0', month: 1 },
-  { ticker: 'FHLC', name: 'Fidelity MSCI Healthcare',   type: 'etf',   color: '#4fc8a0', month: 1 },
-  { ticker: 'QQQ',  name: 'Invesco Nasdaq-100 ETF',     type: 'etf',   color: '#7c6af7', month: 1 },
-  { ticker: 'NVDA', name: 'Nvidia Corporation',         type: 'chip',  color: '#7c6af7', month: 2 },
-  { ticker: 'AVGO', name: 'Broadcom Inc.',              type: 'chip',  color: '#7c6af7', month: 2 },
-  { ticker: 'AAPL', name: 'Apple Inc.',                 type: 'stock', color: '#f7a26a', month: 3 },
-  { ticker: 'MELI', name: 'MercadoLibre Inc.',          type: 'stock', color: '#f7a26a', month: 3 },
-  { ticker: 'ONON', name: 'On Holding AG',              type: 'stock', color: '#f7a26a', month: 3 },
+  { ticker: 'VOO',  name: 'Vanguard S&P 500 ETF',         type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'VXUS', name: 'Vanguard Total Intl Stock',     type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'SCHD', name: 'Schwab Dividend Equity ETF',    type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'FHLC', name: 'Fidelity MSCI Healthcare',      type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'QQQ',  name: 'Invesco Nasdaq-100 ETF',        type: 'etf',   color: '#7c6af7', month: 2 },
+  { ticker: 'NVDA', name: 'Nvidia Corporation',            type: 'chip',  color: '#7c6af7', month: 2 },
+  { ticker: 'SHOP', name: 'Shopify Inc.',                  type: 'stock', color: '#7c6af7', month: 2 },
+  { ticker: 'MELI', name: 'MercadoLibre Inc.',             type: 'stock', color: '#7c6af7', month: 2 },
+  { ticker: 'ONON', name: 'On Holding AG',                 type: 'stock', color: '#7c6af7', month: 2 },
 ];
 
-let selected = new Set(['VOO','VXUS','SCHD','FHLC','QQQ']);
+const MONTH1_PURCHASE_DATE = new Date(2026, 2, 23); // March 23, 2026
+const month1Purchased = new Date() >= MONTH1_PURCHASE_DATE;
+
+let selected = new Set(STOCKS.map(s => s.ticker));
 let currentMode = 'checkin';
 
 function renderWatchlist() {
   const el = document.getElementById('watchlist');
-  el.innerHTML = STOCKS.map(s => `
+  el.innerHTML = STOCKS.map(s => {
+    const badge = (s.month === 1 && month1Purchased)
+      ? '<div><span class="ticker-badge badge-owned">OWNED</span></div>'
+      : '<div><span class="ticker-badge badge-monitoring">MONITORING</span></div>';
+    return `
     <div class="ticker-card ${selected.has(s.ticker) ? 'selected' : ''}"
          style="--card-color:${s.color}"
          onclick="toggleTicker('${s.ticker}')">
       <div class="ticker-symbol">${s.ticker}</div>
       <div class="ticker-name">${s.name}</div>
       <span class="ticker-type type-${s.type}">${s.type === 'etf' ? 'ETF' : s.type === 'chip' ? 'AI CHIP' : 'STOCK'}</span>
-    </div>
-  `).join('');
+      ${badge}
+    </div>`;
+  }).join('');
   updateCount();
 }
 
@@ -343,11 +356,11 @@ function setMode(mode) {
     portfolio: 'Run full portfolio review →'
   }[mode];
 
-  // auto-select month 1 for buy mode
+  // auto-select upcoming purchase month for buy mode
   if (mode === 'buy') {
     selected.clear();
-    selected.add('VOO'); selected.add('VXUS'); selected.add('SCHD');
-    selected.add('FHLC'); selected.add('QQQ');
+    const targetMonth = month1Purchased ? 2 : 1;
+    STOCKS.filter(s => s.month === targetMonth).forEach(s => selected.add(s.ticker));
     renderWatchlist();
   }
 }
@@ -399,7 +412,7 @@ async function runAnalysis() {
 
   const modePrompts = {
     checkin: `You are a professional stock analyst running a weekly portfolio check-in for a beginner investor.
-Her portfolio: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%). Late-20s, moderate risk, holding 1+ year.
+DCA portfolio: Month 1 purchased Mar 23 2026 — VOO $9,000 · VXUS $6,000 · SCHD $3,000 · FHLC $3,000 ($21,000 total). Month 2 targeting Apr/May 2026 — QQQ $4,000 · NVDA $2,000 · SHOP $1,000 · MELI $1,000 · ONON $1,000 ($9,000). Grand total: $30,000. Late-20s, moderate risk, holding 1+ year.
 
 ${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
 
@@ -419,7 +432,7 @@ Two sentences max on the current market environment and what she should watch th
 Be specific with numbers. Keep each section to 1–2 lines. No long paragraphs.`,
 
     buy: `You are a professional stock analyst helping a beginner investor decide whether NOW is a good time to buy.
-DCA plan, Month 1 (late March 2026): VOO $4,500 · VXUS $2,500 · SCHD $3,000 · FHLC $3,000 · QQQ $4,000. Holding 1+ year, moderate risk. Buying through Fidelity.
+DCA plan — Month 1 (Mar 23 2026, $21,000): VOO $9,000 · VXUS $6,000 · SCHD $3,000 · FHLC $3,000. Month 2 (Apr/May 2026, $9,000): QQQ $4,000 · NVDA $2,000 · SHOP $1,000 · MELI $1,000 · ONON $1,000. Total: $30,000. Holding 1+ year, moderate risk. Buying through Fidelity.
 ${buyContext ? `\nHer context: "${buyContext}"` : ''}
 
 ${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
@@ -440,7 +453,7 @@ Two to three sentences: buy today, wait until Monday, or split? Give one clear r
 Be specific with prices and percentages. Keep each line tight — no long paragraphs.`,
 
     portfolio: `You are a senior portfolio manager doing a quarterly review for a beginner investor.
-Portfolio: VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000. Late-20s, long-term hold.
+Portfolio: Month 1 (purchased Mar 23 2026) — VOO $9,000 · VXUS $6,000 · SCHD $3,000 · FHLC $3,000. Month 2 (targeting Apr/May 2026) — QQQ $4,000 · NVDA $2,000 · SHOP $1,000 · MELI $1,000 · ONON $1,000. Total deployed/planned: $30,000. Late-20s, long-term hold.
 
 ${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📈 Buy Decision Summary</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f0f12;
+    color: #e8e8f0;
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-size: 0.82rem;
+    color: #666;
+    margin-bottom: 32px;
+  }
+  .subtitle a {
+    color: #5b8dee;
+    text-decoration: none;
+  }
+  .subtitle a:hover { text-decoration: underline; }
+  .rule {
+    background: #16161c;
+    border: 1px solid #2a2a38;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+  .rule:hover { border-color: #3a3a52; }
+  .rule-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .badge-m1 { background: #1a2e1a; color: #5ecf6a; border: 1px solid #2d5230; }
+  .badge-m2 { background: #1a1f2e; color: #5b8dee; border: 1px solid #2a3557; }
+  .badge-m3 { background: #2a1a2e; color: #b06dec; border: 1px solid #4a2d57; }
+  .rule-date {
+    font-size: 0.8rem;
+    color: #555;
+    margin-left: auto;
+  }
+  .rule-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+  .buys {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .buy-item {
+    background: #1e1e28;
+    border: 1px solid #2e2e3e;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ticker {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #c8c8e0;
+    letter-spacing: 0.5px;
+  }
+  .amount {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .rule-meta {
+    font-size: 0.78rem;
+    color: #555;
+    line-height: 1.6;
+    border-top: 1px solid #222;
+    padding-top: 12px;
+  }
+  .rule-meta strong { color: #888; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e1e28;
+    border: 1px solid #2e2e3e;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .total-label { font-size: 0.78rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .total-amount { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .notes {
+    font-size: 0.75rem;
+    color: #555;
+    line-height: 1.7;
+    margin-top: 4px;
+  }
+  .notes li { list-style: none; padding-left: 0; margin-bottom: 2px; }
+  .notes li::before { content: "→ "; color: #444; }
+  .window-bar {
+    background: #1a2014;
+    border: 1px solid #2d3e28;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.78rem;
+    color: #7ab87a;
+    margin-bottom: 14px;
+  }
+  .window-bar strong { color: #5ecf6a; }
+  footer {
+    margin-top: 36px;
+    font-size: 0.72rem;
+    color: #333;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>📈 Buy Decision Summary</h1>
+<p class="subtitle">
+  Portfolio Monitor → <a href="https://drive.google.com/file/d/1OXg7om1c2TzZwkEgG0b0INa7RoShVsf5/view?usp=drive_link" target="_blank">Open in Google Drive ↗</a>
+  &nbsp;·&nbsp; Run <strong style="color:#aaa">'Buy Decision' mode</strong> before placing any orders
+</p>
+
+<!-- MONTH 1 -->
+<div class="rule">
+  <div class="rule-header">
+    <span class="badge badge-m1">Month 1</span>
+    <span class="rule-date">Monday, March 23, 2026</span>
+  </div>
+  <div class="rule-title">First Purchase — Core ETF Foundation</div>
+  <div class="buys">
+    <div class="buy-item"><span class="ticker">VOO</span><span class="amount">$9,000</span></div>
+    <div class="buy-item"><span class="ticker">VXUS</span><span class="amount">$6,000</span></div>
+    <div class="buy-item"><span class="ticker">SCHD</span><span class="amount">$3,000</span></div>
+    <div class="buy-item"><span class="ticker">FHLC</span><span class="amount">$3,000</span></div>
+  </div>
+  <div class="total-row">
+    <span class="total-label">Total</span>
+    <span class="total-amount">$21,000</span>
+  </div>
+  <div class="window-bar">⏰ Buy window: <strong>11 AM – 2 PM ET</strong> &nbsp;(8 – 11 AM PT)</div>
+  <ul class="notes">
+    <li>Use fractional shares in Fidelity</li>
+    <li>Enable DRIP on SCHD and FHLC after purchase</li>
+    <li>Place market orders only — no limit orders</li>
+  </ul>
+</div>
+
+<!-- MONTH 2 -->
+<div class="rule">
+  <div class="rule-header">
+    <span class="badge badge-m2">Month 2</span>
+    <span class="rule-date">Monday, April 20, 2026</span>
+  </div>
+  <div class="rule-title">Tech &amp; Growth Top-Up</div>
+  <div class="buys">
+    <div class="buy-item"><span class="ticker">QQQ</span><span class="amount">$4,000</span></div>
+    <div class="buy-item"><span class="ticker">NVDA</span><span class="amount">$2,000</span></div>
+    <div class="buy-item"><span class="ticker">SHOP</span><span class="amount">$1,000</span></div>
+    <div class="buy-item"><span class="ticker">MELI</span><span class="amount">$1,000</span></div>
+    <div class="buy-item"><span class="ticker">ONON</span><span class="amount">$1,000</span></div>
+  </div>
+  <div class="total-row">
+    <span class="total-label">Total</span>
+    <span class="total-amount">$9,000</span>
+  </div>
+  <div class="window-bar">⏰ Buy window: <strong>11 AM – 2 PM ET</strong> &nbsp;(8 – 11 AM PT)</div>
+  <ul class="notes">
+    <li>Place market orders only — no limit orders</li>
+  </ul>
+</div>
+
+<footer>Bookmark this page for instant access · All purchases via Fidelity with fractional shares</footer>
+
+</body>
+</html>
