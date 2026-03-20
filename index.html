@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Monitor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.15);
+    --text: #e8e8f0;
+    --muted: #6b6b7e;
+    --accent: #7c6af7;
+    --accent2: #4fc8a0;
+    --accent3: #f7a26a;
+    --danger: #f26b6b;
+    --success: #4fc8a0;
+    --warn: #f7a26a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* grid noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* header */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+  .header-left {}
+  .logo { font-size: 11px; font-family: var(--mono); color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px; }
+  .title { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
+  .subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .header-right { text-align: right; }
+  .timestamp { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* mode tabs */
+  .mode-bar { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+  .mode-btn {
+    flex: 1; padding: 9px 12px; border-radius: 7px; border: none; background: transparent;
+    color: var(--muted); font-family: var(--sans); font-size: 13px; cursor: pointer; transition: all 0.2s;
+    font-weight: 400;
+  }
+  .mode-btn.active { background: var(--surface2); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+  .mode-btn:hover:not(.active) { color: var(--text); }
+
+  /* watchlist grid */
+  .watchlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .ticker-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden;
+  }
+  .ticker-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--card-color, var(--accent)); opacity: 0.6;
+  }
+  .ticker-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+  .ticker-card.selected { border-color: var(--accent); background: rgba(124,106,247,0.08); }
+  .ticker-symbol { font-family: var(--mono); font-size: 13px; font-weight: 500; color: #fff; margin-bottom: 2px; }
+  .ticker-name { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .ticker-type { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; display: inline-block; }
+  .type-etf { background: rgba(79,200,160,0.15); color: var(--accent2); }
+  .type-stock { background: rgba(247,162,106,0.15); color: var(--accent3); }
+  .type-chip { background: rgba(124,106,247,0.15); color: var(--accent); }
+
+  /* controls */
+  .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .select-all-btn, .deselect-btn {
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); font-family: var(--sans); font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .select-all-btn:hover, .deselect-btn:hover { border-color: var(--border-bright); color: var(--text); }
+
+  .selected-count { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-left: auto; }
+
+  /* run button */
+  .run-btn {
+    width: 100%; padding: 16px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--accent), #9c7cf7);
+    color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; letter-spacing: -0.01em;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.3);
+    margin-bottom: 24px;
+  }
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,106,247,0.4); }
+  .run-btn:active { transform: translateY(0); }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* buy mode extras */
+  .buy-context { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
+  .buy-context label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; font-family: var(--mono); letter-spacing: 0.05em; }
+  .buy-context textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px 12px;
+    resize: vertical; min-height: 70px; outline: none; transition: border-color 0.15s;
+  }
+  .buy-context textarea:focus { border-color: var(--accent); }
+
+  /* output area */
+  .output-area { display: none; }
+  .output-area.visible { display: block; }
+
+  .output-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .output-title { font-size: 16px; font-weight: 600; color: #fff; }
+  .output-meta { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-left: auto; }
+
+  .analysis-block {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 12px; transition: border-color 0.2s;
+  }
+  .analysis-block.streaming { border-color: var(--accent); }
+
+  .analysis-ticker { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .analysis-ticker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .analysis-content { font-size: 13.5px; color: var(--text); line-height: 1.75; white-space: pre-wrap; }
+  .analysis-content strong { color: #fff; font-weight: 600; }
+
+  /* verdict pill */
+  .verdict-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .verdict-pill { font-size: 11px; font-family: var(--mono); padding: 4px 10px; border-radius: 6px; font-weight: 500; }
+  .pill-buy { background: rgba(79,200,160,0.15); color: var(--success); border: 1px solid rgba(79,200,160,0.25); }
+  .pill-hold { background: rgba(247,162,106,0.15); color: var(--warn); border: 1px solid rgba(247,162,106,0.25); }
+  .pill-wait { background: rgba(242,107,107,0.15); color: var(--danger); border: 1px solid rgba(242,107,107,0.25); }
+  .pill-watch { background: rgba(124,106,247,0.15); color: var(--accent); border: 1px solid rgba(124,106,247,0.25); }
+
+  /* loading */
+  .loading-bar { height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .loading-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); animation: loadpulse 1.5s ease-in-out infinite; }
+  @keyframes loadpulse { 0%{width:0%;margin-left:0%} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+
+  .status-line { font-size: 12px; font-family: var(--mono); color: var(--muted); margin-bottom: 16px; }
+
+  /* summary bar */
+  .summary-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .summary-item { text-align: center; }
+  .summary-label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; margin-bottom: 3px; }
+  .summary-val { font-size: 18px; font-weight: 600; font-family: var(--mono); color: #fff; }
+  .summary-val.green { color: var(--success); }
+  .summary-val.orange { color: var(--warn); }
+  .summary-val.red { color: var(--danger); }
+
+  /* schedule reminder */
+  .reminder-box { background: rgba(124,106,247,0.06); border: 1px solid rgba(124,106,247,0.2); border-radius: 10px; padding: 14px 16px; margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .reminder-box strong { color: var(--accent); }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* scroll fade for content */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* error */
+  .error-box { background: rgba(242,107,107,0.08); border: 1px solid rgba(242,107,107,0.2); border-radius: 10px; padding: 14px 16px; color: var(--danger); font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">Portfolio Agent</div>
+      <div class="title">Market Monitor</div>
+      <div class="subtitle">AI-powered check-ins & buy signals</div>
+    </div>
+    <div class="header-right">
+      <div class="timestamp" id="clock"></div>
+    </div>
+  </div>
+
+  <div class="mode-bar">
+    <button class="mode-btn active" onclick="setMode('checkin')">Weekly check-in</button>
+    <button class="mode-btn" onclick="setMode('buy')">Buy decision</button>
+    <button class="mode-btn" onclick="setMode('portfolio')">Full portfolio review</button>
+  </div>
+
+  <div class="watchlist" id="watchlist"></div>
+
+  <div class="controls">
+    <button class="select-all-btn" onclick="selectAll()">Select all</button>
+    <button class="deselect-btn" onclick="deselectAll()">Deselect all</button>
+    <span class="selected-count" id="selectedCount">0 selected</span>
+  </div>
+
+  <div id="buyContextArea" style="display:none">
+    <div class="buy-context">
+      <label>CONTEXT (optional) — what's making you consider buying now?</label>
+      <textarea id="buyContext" placeholder="e.g. 'NVDA dropped 5% today after earnings, considering buying my Month 2 position early' or 'VOO is down 3% this week, wondering if this is a good dip to add to'"></textarea>
+    </div>
+  </div>
+
+  <button class="run-btn" id="runBtn" onclick="runAnalysis()">
+    Run check-in analysis →
+  </button>
+
+  <div class="output-area" id="outputArea">
+    <div class="output-header">
+      <div class="output-title" id="outputTitle">Analysis</div>
+      <div class="output-meta" id="outputMeta"></div>
+    </div>
+    <div id="summaryBar"></div>
+    <div id="statusLine" class="status-line"></div>
+    <div id="analysisBlocks"></div>
+    <div id="reminderBox"></div>
+  </div>
+</div>
+
+<script>
+const STOCKS = [
+  { ticker: 'VOO',  name: 'Vanguard S&P 500 ETF',      type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'VXUS', name: 'Vanguard Total Intl Stock',  type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'SCHD', name: 'Schwab Dividend Equity ETF', type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'FHLC', name: 'Fidelity MSCI Healthcare',   type: 'etf',   color: '#4fc8a0', month: 1 },
+  { ticker: 'QQQ',  name: 'Invesco Nasdaq-100 ETF',     type: 'etf',   color: '#7c6af7', month: 1 },
+  { ticker: 'NVDA', name: 'Nvidia Corporation',         type: 'chip',  color: '#7c6af7', month: 2 },
+  { ticker: 'AVGO', name: 'Broadcom Inc.',              type: 'chip',  color: '#7c6af7', month: 2 },
+  { ticker: 'AAPL', name: 'Apple Inc.',                 type: 'stock', color: '#f7a26a', month: 3 },
+  { ticker: 'MELI', name: 'MercadoLibre Inc.',          type: 'stock', color: '#f7a26a', month: 3 },
+  { ticker: 'ONON', name: 'On Holding AG',              type: 'stock', color: '#f7a26a', month: 3 },
+];
+
+let selected = new Set(['VOO','VXUS','SCHD','FHLC','QQQ']);
+let currentMode = 'checkin';
+
+function renderWatchlist() {
+  const el = document.getElementById('watchlist');
+  el.innerHTML = STOCKS.map(s => `
+    <div class="ticker-card ${selected.has(s.ticker) ? 'selected' : ''}"
+         style="--card-color:${s.color}"
+         onclick="toggleTicker('${s.ticker}')">
+      <div class="ticker-symbol">${s.ticker}</div>
+      <div class="ticker-name">${s.name}</div>
+      <span class="ticker-type type-${s.type}">${s.type === 'etf' ? 'ETF' : s.type === 'chip' ? 'AI CHIP' : 'STOCK'}</span>
+    </div>
+  `).join('');
+  updateCount();
+}
+
+function toggleTicker(t) {
+  if (selected.has(t)) selected.delete(t);
+  else selected.add(t);
+  renderWatchlist();
+}
+
+function selectAll() { STOCKS.forEach(s => selected.add(s.ticker)); renderWatchlist(); }
+function deselectAll() { selected.clear(); renderWatchlist(); }
+function updateCount() {
+  document.getElementById('selectedCount').textContent = `${selected.size} selected`;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['checkin','buy','portfolio'][i] === mode);
+  });
+  document.getElementById('buyContextArea').style.display = mode === 'buy' ? 'block' : 'none';
+  const btn = document.getElementById('runBtn');
+  btn.textContent = {
+    checkin: 'Run check-in analysis →',
+    buy: 'Get buy recommendation →',
+    portfolio: 'Run full portfolio review →'
+  }[mode];
+
+  // auto-select month 1 for buy mode
+  if (mode === 'buy') {
+    selected.clear();
+    selected.add('VOO'); selected.add('VXUS'); selected.add('SCHD');
+    selected.add('FHLC'); selected.add('QQQ');
+    renderWatchlist();
+  }
+}
+
+function updateClock() {
+  const now = new Date();
+  const et = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+  const h = et.getHours(), m = String(et.getMinutes()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  const isOpen = h >= 9 && h < 16 && [1,2,3,4,5].includes(et.getDay());
+  document.getElementById('clock').innerHTML =
+    `${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}<br>` +
+    `<span style="color:${isOpen?'#4fc8a0':'#f26b6b'}">${isOpen ? '● MARKET OPEN' : '● MARKET CLOSED'}</span> ${hh}:${m} ${ampm} ET`;
+}
+
+async function runAnalysis() {
+  const tickers = [...selected];
+  if (!tickers.length) { alert('Select at least one ticker.'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = 'Fetching market data...';
+
+  const outputArea = document.getElementById('outputArea');
+  outputArea.className = 'output-area visible fade-in';
+
+  const modeLabels = { checkin: 'Weekly Check-in', buy: 'Buy Decision Analysis', portfolio: 'Full Portfolio Review' };
+  document.getElementById('outputTitle').textContent = modeLabels[currentMode];
+  document.getElementById('outputMeta').textContent = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('summaryBar').innerHTML = `
+    <div class="loading-bar"><div class="loading-fill"></div></div>`;
+  document.getElementById('statusLine').textContent = `Searching live market data for ${tickers.join(', ')}...`;
+  document.getElementById('analysisBlocks').innerHTML = '';
+  document.getElementById('reminderBox').innerHTML = '';
+
+  const buyContext = currentMode === 'buy' ? document.getElementById('buyContext').value : '';
+
+  const modePrompts = {
+    checkin: `You are a professional stock analyst running a weekly portfolio check-in for a beginner investor.
+Her portfolio plan: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%), plus AAPL/MELI/ONON ($1k each) in Month 3.
+She is a late-20s single employed woman, moderate risk tolerance, holding everything 1+ year for long-term capital gains.
+
+For each ticker: ${tickers.join(', ')}
+Use the web_search tool to find the current price, recent % change (1 week, 1 month), and any significant recent news.
+
+Then write a structured analysis for each ticker with these sections:
+📈 PRICE SNAPSHOT — current price, 1-week change, 1-month change
+📰 RECENT NEWS — 1-2 key developments in the past 2 weeks
+🔭 OUTLOOK — is the trend bullish, bearish, or neutral over the next 2-4 weeks?
+💡 ACTION — one clear sentence: BUY / HOLD / WAIT FOR DIP, with brief reason
+
+End with an OVERALL PORTFOLIO MOOD: one paragraph summarizing the current market environment and what she should be thinking about right now.
+
+Be direct, specific with numbers, and written for someone new to investing who wants to learn. No jargon without explanation.`,
+
+    buy: `You are a professional stock analyst helping a beginner investor decide whether NOW is a good time to buy.
+She is buying these stocks as part of a dollar-cost averaging plan. Her first purchases (Month 1, late March 2026): VOO ($4,500), VXUS ($2,500), SCHD ($3,000), FHLC ($3,000), QQQ ($4,000).
+She is holding 1+ year for long-term capital gains. Moderate risk tolerance.
+
+${buyContext ? `Her context: "${buyContext}"` : ''}
+
+For each ticker: ${tickers.join(', ')}
+Use web_search to get the current price, recent performance, and relevant news RIGHT NOW.
+
+For each ticker, give:
+⚡ CURRENT PRICE & TREND — exact price and direction
+📊 ENTRY QUALITY — is this a good, fair, or poor entry point vs recent history?
+🎯 BUY SIGNAL — Strong Buy / Buy / Neutral / Wait for Dip, with a specific reason
+💰 SUGGESTED ACTION — buy full position now, buy half now, or wait for X condition
+
+Then give a TIMING VERDICT: based on ALL selected tickers together, should she buy today, wait until Monday, or split the purchase? Give a clear recommendation with reasoning.
+
+Be specific with prices and percentages. She is buying through Fidelity using market orders.`,
+
+    portfolio: `You are a senior portfolio manager conducting a full quarterly review for a beginner investor.
+Her complete portfolio (post DCA): VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000 = $32,000 total.
+She is a late-20s single employed woman, long-term hold, 1+ year minimum.
+
+Tickers to review: ${tickers.join(', ')}
+Use web_search to check current prices and any major news for each.
+
+For each ticker:
+📊 POSITION HEALTH — price trend, notable moves since purchase
+⚠️ RISKS TO WATCH — any specific risks in the next quarter
+✅ THESIS CHECK — is the original investment thesis still intact? (yes/no/weakened)
+🔄 REBALANCE? — should she add more, hold, or trim if any has grown >15% of portfolio?
+
+End with:
+PORTFOLIO SCORECARD — rate the overall portfolio health (Excellent / Good / Needs Attention)
+NEXT 90 DAYS — what are the 2-3 biggest things to monitor before the next review?
+ONE ACTION — if she could only do one thing in the next 30 days, what should it be?`
+  };
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: modePrompts[currentMode] }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'API error');
+    }
+
+    // extract text blocks
+    const textBlocks = data.content.filter(b => b.type === 'text').map(b => b.text);
+    const fullText = textBlocks.join('\n\n');
+
+    document.getElementById('summaryBar').innerHTML = buildSummaryBar(fullText, tickers);
+    document.getElementById('statusLine').textContent = '';
+
+    // parse and render per-ticker blocks
+    renderAnalysisOutput(fullText, tickers);
+
+    // reminder
+    const reminders = {
+      checkin: `<strong>Next check-in:</strong> Set a reminder for next Monday. Best time to check: <strong>11 AM – 2 PM ET</strong>. If any stock is down 3–5%+ from today without bad news, flag it as a potential buy opportunity for your upcoming monthly purchase.`,
+      buy: `<strong>Buying reminder:</strong> Place market orders between <strong>11 AM – 2 PM ET</strong> today or Monday (avoid the first 30 min after open). Use Fidelity's fractional shares to hit exact dollar amounts. Enable DRIP (dividend reinvestment) on SCHD and FHLC immediately after purchase.`,
+      portfolio: `<strong>Next quarterly review:</strong> ${getNextQuarter()}. Between now and then, check prices weekly every Monday — daily checking leads to emotional decisions. Your 1-year capital gains clock is running on every position from the date of purchase.`
+    };
+    document.getElementById('reminderBox').innerHTML = `<div class="reminder-box">${reminders[currentMode]}</div>`;
+
+  } catch(err) {
+    document.getElementById('analysisBlocks').innerHTML = `<div class="error-box">⚠ Error: ${err.message}<br><br>Make sure you're running this in the Claude.ai artifact environment. The Anthropic API is called automatically — no API key needed here.</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = { checkin: 'Run check-in analysis →', buy: 'Get buy recommendation →', portfolio: 'Run full portfolio review →' }[currentMode];
+}
+
+function buildSummaryBar(text, tickers) {
+  const buyCount = (text.match(/strong buy|buy now|good entry|buy signal/gi) || []).length;
+  const waitCount = (text.match(/wait for dip|hold off|poor entry|wait/gi) || []).length;
+  const holdCount = Math.max(0, tickers.length - buyCount - waitCount);
+  const sentiment = buyCount > waitCount ? 'green' : waitCount > buyCount ? 'red' : 'orange';
+  const sentimentLabel = buyCount > waitCount ? 'BULLISH' : waitCount > buyCount ? 'CAUTIOUS' : 'MIXED';
+
+  return `<div class="summary-bar fade-in">
+    <div class="summary-item"><div class="summary-label">TICKERS</div><div class="summary-val">${tickers.length}</div></div>
+    <div class="summary-item"><div class="summary-label">BUY SIGNALS</div><div class="summary-val green">${buyCount}</div></div>
+    <div class="summary-item"><div class="summary-label">WAIT SIGNALS</div><div class="summary-val red">${waitCount}</div></div>
+    <div class="summary-item"><div class="summary-label">OVERALL</div><div class="summary-val ${sentiment}">${sentimentLabel}</div></div>
+  </div>`;
+}
+
+function renderAnalysisOutput(text, tickers) {
+  const container = document.getElementById('analysisBlocks');
+
+  // try to split by ticker sections
+  const sections = [];
+  let remaining = text;
+
+  tickers.forEach(ticker => {
+    const idx = remaining.search(new RegExp(`\\b${ticker}\\b`, 'i'));
+    if (idx >= 0) {
+      // find next ticker mention to delimit
+      let end = remaining.length;
+      tickers.forEach(t2 => {
+        if (t2 !== ticker) {
+          const idx2 = remaining.search(new RegExp(`\\b${t2}\\b.*\\n.*📈|\\n#+.*\\b${t2}\\b`, 'i'));
+          if (idx2 > idx && idx2 < end) end = idx2;
+        }
+      });
+    }
+  });
+
+  // Just render the whole thing with nice formatting in a single block
+  // but try to split on obvious section headers
+  const parts = text.split(/(?=###|##|\n[A-Z]{2,}:|\n[📈📰🔭💡⚡📊🎯💰])/);
+
+  if (parts.length <= 2) {
+    // render as one block
+    container.innerHTML = `<div class="analysis-block fade-in">
+      <div class="analysis-content">${formatText(text)}</div>
+      ${buildVerdictPills(text)}
+    </div>`;
+  } else {
+    // render chunked
+    container.innerHTML = parts.filter(p => p.trim()).map((p, i) => `
+      <div class="analysis-block fade-in" style="animation-delay:${i*0.05}s">
+        <div class="analysis-content">${formatText(p.trim())}</div>
+      </div>
+    `).join('');
+    // add verdict pills to last block
+    const blocks = container.querySelectorAll('.analysis-block');
+    if (blocks.length) blocks[blocks.length-1].innerHTML += buildVerdictPills(text);
+  }
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.*)/g, '<div style="font-size:15px;font-weight:600;color:#fff;margin:12px 0 6px">$1</div>')
+    .replace(/## (.*)/g, '<div style="font-size:16px;font-weight:600;color:#fff;margin:14px 0 8px">$1</div>')
+    .replace(/\n/g, '<br>');
+}
+
+function buildVerdictPills(text) {
+  const pills = [];
+  if (/strong buy/i.test(text)) pills.push('<span class="verdict-pill pill-buy">Strong Buy</span>');
+  else if (/\bbuy\b/i.test(text)) pills.push('<span class="verdict-pill pill-buy">Buy Signal</span>');
+  if (/wait for dip|hold off/i.test(text)) pills.push('<span class="verdict-pill pill-wait">Wait for Dip</span>');
+  if (/\bhold\b/i.test(text)) pills.push('<span class="verdict-pill pill-hold">Hold</span>');
+  if (/monitor|watch/i.test(text)) pills.push('<span class="verdict-pill pill-watch">Monitor</span>');
+  if (!pills.length) return '';
+  return `<div class="verdict-row">${pills.join('')}</div>`;
+}
+
+function getNextQuarter() {
+  const now = new Date();
+  const quarters = [[0,'April 1'],[3,'July 1'],[6,'October 1'],[9,'January 1']];
+  const m = now.getMonth();
+  for (const [qm, label] of quarters) {
+    if (m < qm) return label + ' ' + now.getFullYear();
+  }
+  return 'January 1 ' + (now.getFullYear() + 1);
+}
+
+// init
+renderWatchlist();
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
