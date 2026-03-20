@@ -369,58 +369,65 @@ async function runAnalysis() {
 
   const modePrompts = {
     checkin: `You are a professional stock analyst running a weekly portfolio check-in for a beginner investor.
-Her portfolio plan: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%), plus AAPL/MELI/ONON ($1k each) in Month 3.
-She is a late-20s single employed woman, moderate risk tolerance, holding everything 1+ year for long-term capital gains.
+Her portfolio: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%). Late-20s, moderate risk, holding 1+ year.
 
-For each ticker: ${tickers.join(', ')}
-Use the web_search tool to find the current price, recent % change (1 week, 1 month), and any significant recent news.
+Use web_search for each ticker: ${tickers.join(', ')}
 
-Then write a structured analysis for each ticker with these sections:
-📈 PRICE SNAPSHOT — current price, 1-week change, 1-month change
-📰 RECENT NEWS — 1-2 key developments in the past 2 weeks
-🔭 OUTLOOK — is the trend bullish, bearish, or neutral over the next 2-4 weeks?
-💡 ACTION — one clear sentence: BUY / HOLD / WAIT FOR DIP, with brief reason
+Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
-End with an OVERALL PORTFOLIO MOOD: one paragraph summarizing the current market environment and what she should be thinking about right now.
+## VOO
+⚡ Price: $XXX · 1wk: X% · 1mo: X%
+📰 News: One sentence on the most relevant recent development.
+🔭 Outlook: Bullish / Neutral / Bearish — one sentence reason.
+💡 Action: HOLD / BUY / WAIT FOR DIP — one sentence.
 
-Be direct, specific with numbers, and written for someone new to investing who wants to learn. No jargon without explanation.`,
+(repeat for each ticker)
+
+## OVERALL MOOD
+Two sentences max on the current market environment and what she should watch this week.
+
+Be specific with numbers. Keep each section to 1–2 lines. No long paragraphs.`,
 
     buy: `You are a professional stock analyst helping a beginner investor decide whether NOW is a good time to buy.
-She is buying these stocks as part of a dollar-cost averaging plan. Her first purchases (Month 1, late March 2026): VOO ($4,500), VXUS ($2,500), SCHD ($3,000), FHLC ($3,000), QQQ ($4,000).
-She is holding 1+ year for long-term capital gains. Moderate risk tolerance.
+DCA plan, Month 1 (late March 2026): VOO $4,500 · VXUS $2,500 · SCHD $3,000 · FHLC $3,000 · QQQ $4,000. Holding 1+ year, moderate risk. Buying through Fidelity.
+${buyContext ? `\nHer context: "${buyContext}"` : ''}
 
-${buyContext ? `Her context: "${buyContext}"` : ''}
+Use web_search for each ticker: ${tickers.join(', ')}
 
-For each ticker: ${tickers.join(', ')}
-Use web_search to get the current price, recent performance, and relevant news RIGHT NOW.
+Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
-For each ticker, give:
-⚡ CURRENT PRICE & TREND — exact price and direction
-📊 ENTRY QUALITY — is this a good, fair, or poor entry point vs recent history?
-🎯 BUY SIGNAL — Strong Buy / Buy / Neutral / Wait for Dip, with a specific reason
-💰 SUGGESTED ACTION — buy full position now, buy half now, or wait for X condition
+## VOO
+⚡ Price: $XXX — direction (e.g. down 2% this week)
+📊 Entry: Good / Fair / Poor — one sentence why.
+🎯 Signal: Strong Buy / Buy / Neutral / Wait for Dip — one sentence reason.
+💰 Action: Buy full $X,XXX now / Buy half now, wait for X / Wait for X condition.
 
-Then give a TIMING VERDICT: based on ALL selected tickers together, should she buy today, wait until Monday, or split the purchase? Give a clear recommendation with reasoning.
+(repeat for each ticker)
 
-Be specific with prices and percentages. She is buying through Fidelity using market orders.`,
+## TIMING VERDICT
+Two to three sentences: buy today, wait until Monday, or split? Give one clear recommendation.
 
-    portfolio: `You are a senior portfolio manager conducting a full quarterly review for a beginner investor.
-Her complete portfolio (post DCA): VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000 = $32,000 total.
-She is a late-20s single employed woman, long-term hold, 1+ year minimum.
+Be specific with prices and percentages. Keep each line tight — no long paragraphs.`,
 
-Tickers to review: ${tickers.join(', ')}
-Use web_search to check current prices and any major news for each.
+    portfolio: `You are a senior portfolio manager doing a quarterly review for a beginner investor.
+Portfolio: VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000. Late-20s, long-term hold.
 
-For each ticker:
-📊 POSITION HEALTH — price trend, notable moves since purchase
-⚠️ RISKS TO WATCH — any specific risks in the next quarter
-✅ THESIS CHECK — is the original investment thesis still intact? (yes/no/weakened)
-🔄 REBALANCE? — should she add more, hold, or trim if any has grown >15% of portfolio?
+Use web_search for each ticker: ${tickers.join(', ')}
 
-End with:
-PORTFOLIO SCORECARD — rate the overall portfolio health (Excellent / Good / Needs Attention)
-NEXT 90 DAYS — what are the 2-3 biggest things to monitor before the next review?
-ONE ACTION — if she could only do one thing in the next 30 days, what should it be?`
+Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
+
+## VOO
+📊 Health: Current price + trend in one sentence.
+⚠️ Risk: One specific risk to watch this quarter.
+✅ Thesis: Intact / Weakened / Broken — one sentence.
+🔄 Rebalance: Hold / Add / Trim — one sentence.
+
+(repeat for each ticker)
+
+## SCORECARD
+Rating: Excellent / Good / Needs Attention
+Next 90 days: Two bullet points max.
+One action: One sentence.`
   };
 
   try {
@@ -434,7 +441,7 @@ ONE ACTION — if she could only do one thing in the next 30 days, what should i
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 5000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: modePrompts[currentMode] }]
       })
@@ -490,45 +497,36 @@ function buildSummaryBar(text, tickers) {
 function renderAnalysisOutput(text, tickers) {
   const container = document.getElementById('analysisBlocks');
 
-  // try to split by ticker sections
-  const sections = [];
-  let remaining = text;
+  // Split on ## headers
+  const rawSections = text.split(/^##\s+/m).filter(s => s.trim());
 
-  tickers.forEach(ticker => {
-    const idx = remaining.search(new RegExp(`\\b${ticker}\\b`, 'i'));
-    if (idx >= 0) {
-      // find next ticker mention to delimit
-      let end = remaining.length;
-      tickers.forEach(t2 => {
-        if (t2 !== ticker) {
-          const idx2 = remaining.search(new RegExp(`\\b${t2}\\b.*\\n.*📈|\\n#+.*\\b${t2}\\b`, 'i'));
-          if (idx2 > idx && idx2 < end) end = idx2;
-        }
-      });
-    }
-  });
-
-  // Just render the whole thing with nice formatting in a single block
-  // but try to split on obvious section headers
-  const parts = text.split(/(?=###|##|\n[A-Z]{2,}:|\n[📈📰🔭💡⚡📊🎯💰])/);
-
-  if (parts.length <= 2) {
-    // render as one block
+  if (rawSections.length <= 1) {
+    // Fallback: render as one block
     container.innerHTML = `<div class="analysis-block fade-in">
       <div class="analysis-content">${formatText(text)}</div>
       ${buildVerdictPills(text)}
     </div>`;
-  } else {
-    // render chunked
-    container.innerHTML = parts.filter(p => p.trim()).map((p, i) => `
-      <div class="analysis-block fade-in" style="animation-delay:${i*0.05}s">
-        <div class="analysis-content">${formatText(p.trim())}</div>
-      </div>
-    `).join('');
-    // add verdict pills to last block
-    const blocks = container.querySelectorAll('.analysis-block');
-    if (blocks.length) blocks[blocks.length-1].innerHTML += buildVerdictPills(text);
+    return;
   }
+
+  container.innerHTML = rawSections.map((section, i) => {
+    const lines = section.split('\n');
+    const heading = lines[0].trim();
+    const body = lines.slice(1).join('\n').trim();
+
+    // Detect if this is a ticker card or a summary section
+    const isTicker = tickers.some(t => heading.toUpperCase().startsWith(t));
+    const isVerdict = /timing verdict|overall mood|scorecard/i.test(heading);
+
+    const headerColor = isVerdict ? 'var(--accent2)' : 'var(--accent)';
+    const pills = isTicker ? buildVerdictPills(body) : '';
+
+    return `<div class="analysis-block fade-in" style="animation-delay:${i * 0.06}s">
+      <div class="analysis-ticker" style="color:${headerColor};font-size:12px;margin-bottom:10px;letter-spacing:0.08em;">${heading.toUpperCase()}</div>
+      <div class="analysis-content">${formatText(body)}</div>
+      ${pills}
+    </div>`;
+  }).join('');
 }
 
 function formatText(text) {
