@@ -100,6 +100,25 @@
 
   .selected-count { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-left: auto; }
 
+  /* web search toggle */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; font-family: var(--mono); color: var(--muted); transition: color 0.2s; white-space: nowrap; }
+  .toggle-label.on { color: var(--accent2); }
+  .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 9px;
+    background: var(--surface2); border: 1px solid var(--border);
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: rgba(79,200,160,0.2); border-color: var(--accent2); }
+  .toggle-track::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--muted); transition: transform 0.2s, background 0.2s;
+  }
+  .toggle input:checked + .toggle-track::after { transform: translateX(16px); background: var(--accent2); }
+
   /* run button */
   .run-btn {
     width: 100%; padding: 16px; border-radius: 12px; border: none;
@@ -244,6 +263,14 @@
     </div>
   </div>
 
+  <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:10px; gap:8px;">
+    <label class="toggle">
+      <input type="checkbox" id="webSearchToggle" onchange="updateToggleLabel()">
+      <span class="toggle-track"></span>
+    </label>
+    <span class="toggle-label" id="toggleLabel">Live search: off</span>
+  </div>
+
   <button class="run-btn" id="runBtn" onclick="runAnalysis()">
     Run check-in analysis →
   </button>
@@ -361,7 +388,10 @@ async function runAnalysis() {
 
   document.getElementById('summaryBar').innerHTML = `
     <div class="loading-bar"><div class="loading-fill"></div></div>`;
-  document.getElementById('statusLine').textContent = `Analyzing ${tickers.join(', ')} — prices reflect model knowledge, not live market data`;
+  const liveSearch = document.getElementById('webSearchToggle').checked;
+  document.getElementById('statusLine').textContent = liveSearch
+    ? `Searching live market data for ${tickers.join(', ')}...`
+    : `Analyzing ${tickers.join(', ')} — prices reflect model knowledge, not live market data`;
   document.getElementById('analysisBlocks').innerHTML = '';
   document.getElementById('reminderBox').innerHTML = '';
 
@@ -371,13 +401,13 @@ async function runAnalysis() {
     checkin: `You are a professional stock analyst running a weekly portfolio check-in for a beginner investor.
 Her portfolio: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%). Late-20s, moderate risk, holding 1+ year.
 
-Use your knowledge to assess each ticker: ${tickers.join(', ')}
+${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-⚡ Trend: Recent price direction and momentum (no exact live price needed).
-📰 Context: One sentence on the most relevant recent development or macro factor.
+⚡ ${liveSearch ? 'Price: $XXX · 1wk: X% · 1mo: X%' : 'Trend: Recent price direction and momentum.'}
+📰 ${liveSearch ? 'News: One sentence on the most relevant recent development.' : 'Context: One sentence on the most relevant recent development or macro factor.'}
 🔭 Outlook: Bullish / Neutral / Bearish — one sentence reason.
 💡 Action: HOLD / BUY / WAIT FOR DIP — one sentence.
 
@@ -392,12 +422,12 @@ Be specific with numbers. Keep each section to 1–2 lines. No long paragraphs.`
 DCA plan, Month 1 (late March 2026): VOO $4,500 · VXUS $2,500 · SCHD $3,000 · FHLC $3,000 · QQQ $4,000. Holding 1+ year, moderate risk. Buying through Fidelity.
 ${buyContext ? `\nHer context: "${buyContext}"` : ''}
 
-Use your knowledge to assess each ticker: ${tickers.join(', ')}
+${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-⚡ Trend: Recent price direction and momentum.
+⚡ ${liveSearch ? 'Price: $XXX — direction (e.g. down 2% this week)' : 'Trend: Recent price direction and momentum.'}
 📊 Entry: Good / Fair / Poor — one sentence why, based on recent range.
 🎯 Signal: Strong Buy / Buy / Neutral / Wait for Dip — one sentence reason.
 💰 Action: Buy full $X,XXX now / Buy half now, wait for X / Wait for X condition.
@@ -412,12 +442,12 @@ Be specific with prices and percentages. Keep each line tight — no long paragr
     portfolio: `You are a senior portfolio manager doing a quarterly review for a beginner investor.
 Portfolio: VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000. Late-20s, long-term hold.
 
-Use your knowledge to assess each ticker: ${tickers.join(', ')}
+${liveSearch ? `Use web_search to get current price and recent news for each ticker: ${tickers.join(', ')}` : `Use your knowledge to assess each ticker: ${tickers.join(', ')}`}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-📊 Health: Recent trend and momentum in one sentence.
+📊 Health: ${liveSearch ? 'Current price + trend in one sentence.' : 'Recent trend and momentum in one sentence.'}
 ⚠️ Risk: One specific risk to watch this quarter.
 ✅ Thesis: Intact / Weakened / Broken — one sentence.
 🔄 Rebalance: Hold / Add / Trim — one sentence.
@@ -441,7 +471,8 @@ One action: One sentence.`
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: liveSearch ? 5000 : 2000,
+        ...(liveSearch ? { tools: [{ type: 'web_search_20250305', name: 'web_search' }] } : {}),
         messages: [{ role: 'user', content: modePrompts[currentMode] }]
       })
     });
@@ -457,7 +488,9 @@ One action: One sentence.`
     const fullText = textBlocks.join('\n\n');
 
     document.getElementById('summaryBar').innerHTML = buildSummaryBar(fullText, tickers);
-    document.getElementById('statusLine').textContent = 'Note: analysis based on model knowledge — verify live prices before trading.';
+    document.getElementById('statusLine').textContent = liveSearch
+      ? ''
+      : 'Note: analysis based on model knowledge — verify live prices before trading.';
 
     // parse and render per-ticker blocks
     renderAnalysisOutput(fullText, tickers);
@@ -555,6 +588,13 @@ function getNextQuarter() {
     if (m < qm) return label + ' ' + now.getFullYear();
   }
   return 'January 1 ' + (now.getFullYear() + 1);
+}
+
+function updateToggleLabel() {
+  const on = document.getElementById('webSearchToggle').checked;
+  const label = document.getElementById('toggleLabel');
+  label.textContent = on ? 'Live search: on' : 'Live search: off';
+  label.className = 'toggle-label' + (on ? ' on' : '');
 }
 
 function validateApiKey() {
