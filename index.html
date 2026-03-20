@@ -361,7 +361,7 @@ async function runAnalysis() {
 
   document.getElementById('summaryBar').innerHTML = `
     <div class="loading-bar"><div class="loading-fill"></div></div>`;
-  document.getElementById('statusLine').textContent = `Searching live market data for ${tickers.join(', ')}...`;
+  document.getElementById('statusLine').textContent = `Analyzing ${tickers.join(', ')} — prices reflect model knowledge, not live market data`;
   document.getElementById('analysisBlocks').innerHTML = '';
   document.getElementById('reminderBox').innerHTML = '';
 
@@ -371,13 +371,13 @@ async function runAnalysis() {
     checkin: `You are a professional stock analyst running a weekly portfolio check-in for a beginner investor.
 Her portfolio: VOO (35%), VXUS (15%), QQQ+NVDA+AVGO (20%), FHLC (10%), SCHD (10%). Late-20s, moderate risk, holding 1+ year.
 
-Use web_search for each ticker: ${tickers.join(', ')}
+Use your knowledge to assess each ticker: ${tickers.join(', ')}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-⚡ Price: $XXX · 1wk: X% · 1mo: X%
-📰 News: One sentence on the most relevant recent development.
+⚡ Trend: Recent price direction and momentum (no exact live price needed).
+📰 Context: One sentence on the most relevant recent development or macro factor.
 🔭 Outlook: Bullish / Neutral / Bearish — one sentence reason.
 💡 Action: HOLD / BUY / WAIT FOR DIP — one sentence.
 
@@ -392,13 +392,13 @@ Be specific with numbers. Keep each section to 1–2 lines. No long paragraphs.`
 DCA plan, Month 1 (late March 2026): VOO $4,500 · VXUS $2,500 · SCHD $3,000 · FHLC $3,000 · QQQ $4,000. Holding 1+ year, moderate risk. Buying through Fidelity.
 ${buyContext ? `\nHer context: "${buyContext}"` : ''}
 
-Use web_search for each ticker: ${tickers.join(', ')}
+Use your knowledge to assess each ticker: ${tickers.join(', ')}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-⚡ Price: $XXX — direction (e.g. down 2% this week)
-📊 Entry: Good / Fair / Poor — one sentence why.
+⚡ Trend: Recent price direction and momentum.
+📊 Entry: Good / Fair / Poor — one sentence why, based on recent range.
 🎯 Signal: Strong Buy / Buy / Neutral / Wait for Dip — one sentence reason.
 💰 Action: Buy full $X,XXX now / Buy half now, wait for X / Wait for X condition.
 
@@ -412,12 +412,12 @@ Be specific with prices and percentages. Keep each line tight — no long paragr
     portfolio: `You are a senior portfolio manager doing a quarterly review for a beginner investor.
 Portfolio: VOO $10,500 · VXUS $4,500 · QQQ $4,000 · NVDA $2,000 · AVGO $2,000 · FHLC $3,000 · SCHD $3,000 · AAPL $1,000 · MELI $1,000 · ONON $1,000. Late-20s, long-term hold.
 
-Use web_search for each ticker: ${tickers.join(', ')}
+Use your knowledge to assess each ticker: ${tickers.join(', ')}
 
 Format your response EXACTLY like this for each ticker — use the ## header with the ticker symbol:
 
 ## VOO
-📊 Health: Current price + trend in one sentence.
+📊 Health: Recent trend and momentum in one sentence.
 ⚠️ Risk: One specific risk to watch this quarter.
 ✅ Thesis: Intact / Weakened / Broken — one sentence.
 🔄 Rebalance: Hold / Add / Trim — one sentence.
@@ -441,8 +441,7 @@ One action: One sentence.`
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 5000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        max_tokens: 2000,
         messages: [{ role: 'user', content: modePrompts[currentMode] }]
       })
     });
@@ -458,7 +457,7 @@ One action: One sentence.`
     const fullText = textBlocks.join('\n\n');
 
     document.getElementById('summaryBar').innerHTML = buildSummaryBar(fullText, tickers);
-    document.getElementById('statusLine').textContent = '';
+    document.getElementById('statusLine').textContent = 'Note: analysis based on model knowledge — verify live prices before trading.';
 
     // parse and render per-ticker blocks
     renderAnalysisOutput(fullText, tickers);
